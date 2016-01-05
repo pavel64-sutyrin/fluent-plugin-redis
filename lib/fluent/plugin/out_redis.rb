@@ -14,6 +14,7 @@ module Fluent
 
       @host = conf.has_key?('host') ? conf['host'] : 'localhost'
       @port = conf.has_key?('port') ? conf['port'].to_i : 6379
+      @list = conf.has_key?('list') ? conf['list'] : 'fluentd'
       @db_number = conf.has_key?('db_number') ? conf['db_number'].to_i : nil
 
       if conf.has_key?('namespace')
@@ -42,7 +43,8 @@ module Fluent
         chunk.open { |io|
           begin
             MessagePack::Unpacker.new(io).each.each_with_index { |record, index|
-              @redis.mapped_hmset "#{record[0]}.#{index}", record[1]
+              @redis.rpush @list record[0]
+              @redis.rpush @list record[1]
             }
           rescue EOFError
             # EOFError always occured when reached end of chunk.
